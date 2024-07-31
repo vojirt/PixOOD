@@ -27,7 +27,8 @@ Download the pre-trained checkpoints (it uses [gdown](https://github.com/wkentar
 For example of single frame inference see the `example.ipynb`
 
 For evaluation of whole sequence see example below:
-[![Watch the video](./assets/test_image.png)](./assets/wos_seq1.mp4)
+
+https://github.com/user-attachments/assets/1993b638-794a-4338-8de5-071aa88c88bd
 
 This command generated the video above (Note that it requires `ffmpeg` for video generation, otherwise the individual images are stored)  
 ```python
