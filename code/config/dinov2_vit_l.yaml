@@ -1,0 +1,44 @@
+SYSTEM:
+    RNG_SEED: 42
+
+MODEL:
+    FILENAME: dinov2                   # net/models/ file name
+    NET: DINOv2NetMultiScaleBaseline
+    EMB_SIZE: 1024                   # for the largest model variant
+    PATCH_SIZE: 14
+    NUM_CLASSES: 19                 # number of output classes
+    ARCH: dinov2_vitl14
+    MULTISCALE: [5,11,17,23] 
+    PATCH_MAJORITY_VOTE_THR: 0.9
+    FEATURE_RESIZE_FACTOR: 1 
+
+LOSS: 
+    TYPE: [CrossEntropyLoss] 
+    WEIGHTS: [1.0]
+
+DATASET:
+    TRAIN: cityscapes
+    VAL: cityscapes
+    TEST: cityscapes
+    AUGMENT: DINOv2Augmentation
+
+INPUT:
+    BATCH_SIZE: 4 
+    IMG_SIZE: 1792                        # either list to force exact size or int for longest side size while keeping aspect ratio (as close as possible) 
+    NORM_MEAN: [0.485, 0.456, 0.406]      # default IMAGENET normalization
+    NORM_STD: [0.229, 0.224, 0.225]       # default IMAGENET normalization
+    IMG_TRAIN_COLOR_AUG: [0.2, 0.2, 0.2, 0.2]
+    RANDOMCROP_AUG: False
+
+EXPERIMENT:
+    EPOCHS: 30 
+    SKIP_EPOCHS: false
+    EVAL_INTERVAL: 1
+    EVAL_METRIC: SegmEvaluator
+    USE_EVAL_METRIC_FOR_CHCK: True            
+    NAME: "backbone_lp"
+
+OPTIMIZER:
+    METHOD: "adamw"
+    LR: 0.0001
+    SCHEDULER: "none"
