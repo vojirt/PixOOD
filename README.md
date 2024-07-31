@@ -1,5 +1,5 @@
-# PixOOD (Accepted to ECCV 2024)
-Official implementation of the "PixOOD: Pixel-Level Out-of-Distribution Detection"
+# PixOOD
+Official implementation of the "PixOOD: Pixel-Level Out-of-Distribution Detection" ECCV 2024 paper
 
 **[[Paper](http://arxiv.org/abs/2405.19882)]**
 
@@ -15,8 +15,9 @@ If you use this work please cite:
 }
 ```
 
-## Update 🔥🔥
-- **2024.07.31 💥 Code published, inference tested on "on my PC and it works" :)** 
+## Update
+- **2024.07.31 - 💥 Code published, inference tested on "on my PC and it works" :)** 
+- **2024.07.03 - Accepted to ECCV 2024**
 
 ## Inference 
 Download the pre-trained checkpoints (it uses [gdown](https://github.com/wkentaro/gdown) python app)
