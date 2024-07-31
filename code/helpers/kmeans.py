@@ -172,12 +172,9 @@ class OnlineKMeans():
             self.clusters = torch.cat([self.clusters, new_c], dim=0)
             # initial quess of cluster size as mean size of existing clusters
             if self.mahalanobis_dist:
-                # var = torch.diag(torch.mean(self.cluster_var, dim=0).diag().mean() * torch.ones(self.cluster_var.shape[1], device=device))[None, ...]
                 var = torch.mean(self.cluster_var, dim=0)[None, ...]
             else:
                 var = torch.mean(self.cluster_var, dim=0, keepdim=True)
-                # var = torch.cat([torch.mean(self.cluster_var, dim=0, keepdim=True), self.var_estimation(xc, self.clusters[-1:, :], robust=True)[None, ...]], dim=0).min(dim=0)[0][None, ...]
-            # var = self.var_estimation(xc, self.clusters[-1:, :], robust=True)[None, ...]
 
             reestimate = False
 
@@ -214,8 +211,6 @@ class OnlineKMeans():
                         self.update_cluster(u, x[cluster_assignments[:, u], :])
 
                 # any too far? --> add new mi
-                # if len(nonassigned.shape) > 1 and nonassigned.shape[0] > 0:
-                #     nonassigned = nonassigned[:, 0]
                 if nonassigned.sum() > 1 and add_new and (self.clusters is not None and self.clusters.shape[0] < self.MAX_NUM_CLUSTERS):
                     self.add_cluster(x, select_from=x[nonassigned, :]) 
                     
@@ -281,10 +276,7 @@ class DiffKMeansMultiClassv2(torch.nn.Module):
         self.emb_size = emb_size
         self.knn_type = knn_type
 
-        # self.cluster_temp = torch.nn.Parameter(0.5*torch.ones((1, num_classes, 1)), requires_grad=False)
         self.cluster_temp = torch.nn.Parameter(0.5*torch.ones(1), requires_grad=False)
-
-        # self.exp_distr_temp = torch.nn.Parameter((100/K_per_class)*torch.ones(num_classes), requires_grad=True)
 
         self.exp_distr_sigmoid_temp = 2
         self.exp_distr_sigmoid_max_value = 100
@@ -425,12 +417,6 @@ class DiffKMeansMultiClassv2(torch.nn.Module):
             else:
                 raise NotImplementedError
 
-            # soft piece-wise ML condensation
-            # class_loss = -((pdf[mask, c, :] * r[mask, c, :]).sum(dim=1) + 1e-12).log().mean(dim=0)
-
-            # soft k-means scaled
-            # class_loss = (((-sim[mask, c, :]).pow(2) / self.tau[c:c+1, :]) * r[mask, c, :]).sum(dim=1).mean(dim=0)
-
             self.training_loss[c].append(class_loss.detach().cpu().item())
             kmeans_loss += class_loss 
 
@@ -460,10 +446,7 @@ class DiffKMeansMultiClassv2(torch.nn.Module):
     
     @property
     def tau(self):
-        # tau = torch.nn.functional.relu(self.exp_distr_temp[c:c+1, :]) + 0.01 
-        # tau = torch.nn.functional.relu(self.exp_distr_temp) + 0.01 
         tau = torch.nn.functional.sigmoid(self.exp_distr_temp / self.exp_distr_sigmoid_temp) * self.exp_distr_sigmoid_max_value + 1./self.exp_distr_sigmoid_max_value 
-        # tau = self.exp_distr_temp
         return tau
 
     def eval_distribution_sum_large(self, dist, qnorm=False):
@@ -487,15 +470,11 @@ class DiffKMeansMultiClassv2(torch.nn.Module):
 
     def eval_distribution(self, dist):
         tau = self.tau
-        # return torch.exp(-dist / tau[None, :, None]) / tau[None, :, None]
         return torch.exp(-dist / tau[None, ...]) / tau[None, ...]
-        # return torch.exp(-dist.pow(2) / (2*tau[None, :, None].pow(2))) / (tau[None, :, None]*np.sqrt(2*np.pi))
 
     def eval_log_distribution(self, dist):
         tau = self.tau
-        # return (-dist / tau[None, :, None]) - tau[None, :, None].log()
         return (-dist / tau[None, ...]) - tau[None, ...].log()
-        # return (-dist.pow(2) / (2*tau[None, :, None].pow(2))) - (tau[None, :, None]*np.sqrt(2*np.pi)).log()
 
     @property
     def reset_assignment_thr(self):
