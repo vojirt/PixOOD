@@ -3,6 +3,8 @@ Official implementation of the "PixOOD: Pixel-Level Out-of-Distribution Detectio
 
 **[[Paper](http://arxiv.org/abs/2405.19882)]**
 
+![PixOOD method overview](./assets/pixood_scheme.png)
+
 If you use this work please cite:
 ```latex
 @InProceedings{Vojir_2024_ECCV,
