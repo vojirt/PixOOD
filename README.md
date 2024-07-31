@@ -17,6 +17,11 @@ If you use this work please cite:
 - **2024.07.31 💥 Code published, inference tested on "on my PC and it works" :)** 
 
 ## Inference 
+Download the pre-trained checkpoints (it uses [gdown](https://github.com/wkentaro/gdown) python app)
+```
+./checkpoints/download.sh
+```
+
 For example of single frame inference see the `example.ipynb`
 
 For evaluation of whole sequence see example below:
