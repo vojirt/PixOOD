@@ -16,7 +16,7 @@ If you use this work please cite:
 ```
 
 ## Update
-- **2024.07.31 - 💥 Code published, inference tested on "on my PC and it works" :)** 
+- **2024.07.31 - 💥 Code published, inference tested "on my PC and it works" :)** 
 - **2024.07.03 - Accepted to ECCV 2024**
 
 ## Inference 
@@ -70,7 +70,7 @@ TODO:
 
 
 ## Licence
-Copyright (c) 2021 Toyota Motor Europe<br>
+Copyright (c) 2024 Toyota Motor Europe<br>
 Patent Pending. All rights reserved.
 
 This work is licensed under a [Creative Commons
