@@ -19,6 +19,11 @@ If you use this work please cite:
 - **2024.07.31 - 💥 Code published, inference tested "on my PC and it works" :)** 
 - **2024.07.03 - Accepted to ECCV 2024**
 
+## TODO
+- [ ] Add documentation and comments
+- [ ] Clean up and test the training code
+- [ ] Streamline the training procedure
+
 ## Inference 
 Download the pre-trained checkpoints (it uses [gdown](https://github.com/wkentaro/gdown) python app)
 ```
@@ -62,12 +67,6 @@ and the inference code should work. Note that if you change some configuration
 you will probably need to copy the `parameters.yaml` from
 `./_out/experiments/pixood/` to the git repo root directory and change the
 `OUT_DIR` to `./`.
-
-TODO:
-- [ ] Clean up the training code
-- [ ] Test the training code
-- [ ] Streamline the training procedure
-
 
 ## Licence
 Copyright (c) 2024 Toyota Motor Europe<br>
