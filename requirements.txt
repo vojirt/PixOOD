@@ -1,0 +1,10 @@
+einops==0.8.0
+ipdb==0.13.11
+numpy==1.21.5
+Pillow==10.4.0
+scipy==1.8.0
+torch==2.4.0
+torchvision==0.19.0
+tqdm==4.66.5
+yacs==0.1.8
+gdown==5.1.0
