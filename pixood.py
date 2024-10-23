@@ -104,13 +104,17 @@ class PixOOD():
 
     def evaluate(self, input_pil_image, return_anomaly_score=True):
         if torch.is_tensor(input_pil_image):
-            orig_size = input_pil_image.shape[-2:]
-            #assumes tensor [B, 3, H, W]
-            x = []
-            for b in range(0, input_pil_image.shape[0]):
-                pi = ToPILImage()(255*input_pil_image[b, ...])
-                x.append(self.transforms(SimpleNamespace(image=pi, label=None, image_name="")).image) 
-            x = torch.stack(x, dim=0).to(self.device)
+            if len(input_pil_image.shape) > 3:
+                orig_size = input_pil_image.shape[-2:]
+                #assumes tensor [B, 3, H, W] in range (0, 1)
+                assert ((input_pil_image.min().item() >= 0.0) and (input_pil_image.max().item() <= 1.0)), f"The input tensor is not in range (0, 1). ({input_pil_image.min().item()}, {input_pil_image.max().item()})"
+                x = []
+                for b in range(0, input_pil_image.shape[0]):
+                    pi = ToPILImage()(input_pil_image[b, ...])
+                    x.append(self.transforms(SimpleNamespace(image=pi, label=None, image_name="")).image) 
+                x = torch.stack(x, dim=0).to(self.device)
+            else:
+                assert False, f"No batch dimension of input tensor: {input_pil_image.shape}."
         else:
             orig_size = [input_pil_image.height, input_pil_image.width]
             #assumes single pil image
