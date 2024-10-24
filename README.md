@@ -16,6 +16,7 @@ If you use this work please cite:
 ```
 
 ## Update
+- **2024.10.24 - Fixed bug in input image scaling if passed to pixood.py evaluation function as normalized tensor => improved results in table 1,2 (see newest version of the arXiv paper, and the commit fa5b13092a2d370a14bdc80e454311df5d01d690)**
 - **2024.07.31 - 💥 Code published, inference tested "on my PC and it works" :)** 
 - **2024.07.03 - Accepted to ECCV 2024**
 
