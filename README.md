@@ -1,11 +1,24 @@
 # PixOOD
-Official implementation of the "PixOOD: Pixel-Level Out-of-Distribution Detection" ECCV 2024 paper
+Official implementation of the "PixOOD: Pixel-Level Out-of-Distribution Detection" TPAMI 2026 (and ECCV 2024)
 
-**[[Paper](http://arxiv.org/abs/2405.19882)]**
+**[[Paper](https://cmp.felk.cvut.cz/~vojirtom/assets/files/TPAMI2026.pdf)]**
 
 ![PixOOD method overview](./assets/pixood_scheme.png)
 
 If you use this work please cite:
+```latex
+@Article{Vojir_2026_TPAMI,
+  author={Vojíř, Tomáš and Šochman, Jan and Matas, Jiří},
+  title={{PixOOD: Pixel-Level Out-of-Distribution Detection}},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year={2026},
+  volume={48},
+  number={9},
+  pages={10682-10694},
+  doi={10.1109/TPAMI.2026.3688748}
+}
+```
+or
 ```latex
 @InProceedings{Vojir_2024_ECCV,
     author    = {Vojíř, Tomáš and Šochman, Jan and Matas, Jiří},
@@ -16,16 +29,13 @@ If you use this work please cite:
 ```
 
 ## Update
+- **2026.09.24 - 💥 Updated code including the unified arch. and checkpoint from TPAMI paper**
+- **2026.04.30 - Accepted to IEEE TPAMI**
 - **2024.10.24 - 🐛 Bug fix ([fa5b130](https://github.com/vojirt/PixOOD/commit/fa5b13092a2d370a14bdc80e454311df5d01d690)): results improved**, see newest version of the arXiv paper (tables 1,2)
-- **2024.07.31 - 💥 Code published, inference tested "on my PC and it works" :)** 
+- **2024.07.31 - 💥 Code published, inference tested "on my PC and it works" :)**
 - **2024.07.03 - Accepted to ECCV 2024**
 
-## TODO
-- [ ] Add documentation and comments
-- [ ] Clean up and test the training code
-- [ ] Streamline the training procedure
-
-## Inference 
+## Inference
 Download the pre-trained checkpoints (it uses [gdown](https://github.com/wkentaro/gdown) python app)
 ```
 ./checkpoints/download.sh
@@ -37,7 +47,7 @@ For evaluation of whole sequence see example below:
 
 https://github.com/user-attachments/assets/1993b638-794a-4338-8de5-071aa88c88bd
 
-This command generated the video above (Note that it requires `ffmpeg` for video generation, otherwise the individual images are stored)  
+This command generated the video above (Note that it requires `ffmpeg` for video generation, otherwise the individual images are stored)
 ```python
 python plot.py --img_dir ./assets/test_seq --out_dir ./_out/vis --dname wos_seq1 --fps 10 --thr 0.995
 ```

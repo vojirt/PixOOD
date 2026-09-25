@@ -20,7 +20,7 @@ class Saver(object):
         if model is not None and save_trainable_only:
             trainable_params = {n: state["state_dict"][n] for n, p in model.named_parameters() if p.requires_grad}
             reg_buffers = {n: state["state_dict"][n] for n, _ in model.named_buffers()}
-            state["state_dict"] = trainable_params 
+            state["state_dict"] = trainable_params
             state["state_dict"].update(reg_buffers)
            # print("===========")
            # print("Saved state_dict:")
@@ -39,7 +39,7 @@ class Saver(object):
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, f"metric_{m}.txt"), 'a') as f:
                 f.write(str(epoch) + ", " + str(v) + "\n")
-    
+
     @staticmethod
     def load_checkpoint(checkpoint_file, model, optimizer=None, device="cuda", map_location="cpu"):
         state = {}
@@ -47,19 +47,19 @@ class Saver(object):
             if not os.path.isfile(checkpoint_file):
                 raise RuntimeError(f"=> Resume checkpoint does not exist! ({checkpoint_file})")
 
-            checkpoint = torch.load(checkpoint_file, map_location=map_location)
+            checkpoint = torch.load(checkpoint_file, map_location=map_location, weights_only=False)
 
             # NOTE: I think that because of torch.optimize, the trainable weights are saved with the "_orig_mod." prefix, so remove it
             for key in list(checkpoint['state_dict'].keys()):
                 if '_orig_mod.' in key:
                     checkpoint['state_dict'][key.replace('_orig_mod.', '')] = checkpoint['state_dict'][key]
                     del checkpoint['state_dict'][key]
-            
+
             strict = not checkpoint.get("save_trainable_only", False)
             if not strict:
                 print ("Saved model stores only tranable weights of model --> disabling strict model loading")
                 model_state = model.state_dict()
-                no_match = { k:v.size() for k,v in checkpoint['state_dict'].items() 
+                no_match = { k:v.size() for k,v in checkpoint['state_dict'].items()
                             if (k in model_state and v.size() != model_state[k].size()) or (k not in model_state) }
                 print("    Number of not matched parts: ", len(no_match))
                 print("-----------------")
@@ -76,11 +76,11 @@ class Saver(object):
                         for k, v in state_opt.items():
                             if torch.is_tensor(v):
                                 state_opt[k] = v.to(device)
-                if "best_pred" in checkpoint: 
+                if "best_pred" in checkpoint:
                     state["best_pred"] = checkpoint['best_pred']
             except:
                 # finetuning or using some part of pretrained model
-                print(f"Failed to load original model {checkpoint_file}") 
+                print(f"Failed to load original model {checkpoint_file}")
                 print("    Loading only matching layers ...")
                 print("    Not loading saved optimizer ...")
                 pretrained_state = { k:v for k,v in checkpoint['state_dict'].items() if k in model_state and v.size() == model_state[k].size() }
@@ -92,7 +92,7 @@ class Saver(object):
             custom_data = checkpoint.get("custom_data", {})
             if hasattr(model, "custom_data"):
                 model.custom_data = custom_data
-            
+
             print(f"=> loaded checkpoint '{checkpoint_file}' (epoch {checkpoint['epoch']})")
         return state
 
@@ -102,7 +102,7 @@ class Saver(object):
 
 
 def load_experiment_cfg(exp_dir):
-    cfg_local = get_cfg_defaults() 
+    cfg_local = get_cfg_defaults()
     # read the experiment parameters
     if os.path.isfile(os.path.join(exp_dir, "parameters.yaml")):
         with open(os.path.join(exp_dir, "parameters.yaml"), 'r') as f:

@@ -7,7 +7,7 @@ from tqdm import tqdm
 import importlib
 import numpy as np
 
-from config import get_cfg_defaults  
+from config import get_cfg_defaults
 from helpers.saver import load_experiment_cfg, Saver
 from helpers.kmeans import (
     OnlineKMeans,
@@ -26,22 +26,22 @@ class CacheLoader():
         self.out_dir = os.path.join(outdir, strhash)
         os.makedirs(self.out_dir, exist_ok=True)
         self.indexes = np.arange(len(dataloader))
-        
-        print(f"Caching data to {self.out_dir}") 
+
+        print(f"Caching data to {self.out_dir}")
         first_id, last_id = 0, len(dataloader) - 1
-        if not (os.path.isfile(os.path.join(self.out_dir, f"{first_id:08d}.pt")) and 
+        if not (os.path.isfile(os.path.join(self.out_dir, f"{first_id:08d}.pt")) and
                 os.path.isfile(os.path.join(self.out_dir, f"{last_id:08d}.pt"))):
             for i, sample in enumerate(tqdm(dataloader)):
                 filename = os.path.join(self.out_dir, f"{i:08d}.pt")
                 # [B, 3, H, W], [B, H, W]
                 image, target = sample[0].to(self.device), sample[1].to(self.device)
-                out = self.model(image) 
+                out = self.model(image)
                 emb = out.emb[:, :, :, -emb_size :]
                 torch.save({"target":target.cpu(), "emb":emb.cpu()}, filename)
         else:
-            print(f"    caching data exist, skipping precomputing.") 
+            print(f"    caching data exist, skipping precomputing.")
 
-        self.current = -1 
+        self.current = -1
 
     def shuffle(self):
         self.indexes = np.random.permutation(self.indexes)
@@ -57,7 +57,7 @@ class CacheLoader():
         sample = torch.load(filename, torch.device('cpu'))
         target = sample["target"].to(self.device)
         emb = sample["emb"].to(self.device)
-            
+
         return {"target":target, "emb": emb}
 
 
@@ -71,9 +71,9 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         self.IGNORE_LABEL = cfg.LOSS.IGNORE_LABEL
         self.MIXUP = cfg.MODEL.MIXUP
 
-        self.NUM_KNN_ITERATIONS = 5 
+        self.NUM_KNN_ITERATIONS = 5
         self.RECOMPUTE_NM = cfg.EXPERIMENT.RECOMPUTE_NM
-        self.NUM_KNN_TRIALS = 1 
+        self.NUM_KNN_TRIALS = 1
         self.MAX_K = cfg.MODEL.MAX_K
         self.LR = cfg.OPTIMIZER.LR
         self.NORMALIZE_DIST_BY_TAU = cfg.MODEL.TAU_NORM
@@ -88,7 +88,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-        cfg_exp = get_cfg_defaults() 
+        cfg_exp = get_cfg_defaults()
         cfg_exp.merge_from_file(os.path.join(cfg.EXPERIMENT.OUT_DIR, "code", "config", "dinov2_vit_l.yaml"))
         model_module = importlib.import_module("net.models." + cfg_exp.MODEL.FILENAME)
         self.model = getattr(model_module, cfg_exp.MODEL.NET)(**{"cfg": cfg_exp})
@@ -103,7 +103,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         self.model.eval()
 
     def compute_2dspace_vectors(self, out, eval_scale_factor=1):
-        if eval_scale_factor > 1: 
+        if eval_scale_factor > 1:
             emb = rearrange( out.emb[:, :, :, -self.EMB_SIZE :], "b hp wp c -> b c hp wp")
             logits = rearrange(out.logits_embshape, "b hp wp c -> b c hp wp")
 
@@ -206,8 +206,8 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         return SimpleNamespace(pred_y=pred_y, pred_score=pred_score, pred_score_all=pred_score_all, nm_dist=nm_dist, logits=logits)
 
     def post_training(self, trainer):
-        if self.RECOMPUTE_NM or not self.nm_model_exists(): 
-            self.compute_nm_model(trainer) 
+        if self.RECOMPUTE_NM or not self.nm_model_exists():
+            self.compute_nm_model(trainer)
         else:
             print(f"Skipping computation of NM, RECOMPUTE_NM: {self.RECOMPUTE_NM}, knn_model exists:", self.nm_model_exists())
 
@@ -230,7 +230,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
             # set model
             self.custom_data["knn_model"] = knn_models[i]
             print(f"Running KNN model accuracy testing, trial {i}.")
-            P, cls_acc, cls_prob, prob = self.nm_clusters_accuracy(knn_models[i], trainer, on_train_data=False, full=True) 
+            P, cls_acc, cls_prob, prob = self.nm_clusters_accuracy(knn_models[i], trainer, on_train_data=False, full=True)
             print(f"Cluster P: {P*100:0.2f}; Mean acc.: {cls_acc*100:0.2f}, Mean prob. acc: {cls_prob*100:0.2f}, log prob: {prob:0.3f}")
             accuracy.append(cls_acc)
             all_stats.append([P, cls_acc, cls_prob, prob])
@@ -255,12 +255,12 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         y_true = []
 
         total_prob = 0
-        
+
         if on_train_data:
-            dataloader = CacheLoader(trainer.train_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"), 
+            dataloader = CacheLoader(trainer.train_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"),
                                  "train_" + trainer.cfg.DATASET.TRAIN, self.model, self.device, self.EMB_SIZE)
         else:
-            dataloader = CacheLoader(trainer.val_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"), 
+            dataloader = CacheLoader(trainer.val_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"),
                                  "val_" + trainer.cfg.DATASET.VAL, self.model, self.device, self.EMB_SIZE)
 
         tbar = tqdm(range(0, len(dataloader)))
@@ -281,7 +281,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
                 min_d = torch.min(cdists, dim=-1)
                 min_class_dist[:, c] = min_d[0]
                 min_class_dist_id[:, c] = min_d[1]
-                class_prob[:, c] = torch.max((1.0 / (class_clusters[c].cluster_var[None, :].sqrt() * np.sqrt(2.0*np.pi))) * 
+                class_prob[:, c] = torch.max((1.0 / (class_clusters[c].cluster_var[None, :].sqrt() * np.sqrt(2.0*np.pi))) *
                                     torch.exp(-0.5 * cdists.pow(2) / class_clusters[c].cluster_var[None, :]), dim=-1)[0]
 
             y_pred.extend(torch.argmax(-min_class_dist, dim=-1).flatten().cpu().numpy())
@@ -334,7 +334,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
         max_K = self.MAX_K
         max_init_data_per_class = 10000
 
-        dataloader = CacheLoader(trainer.train_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"), 
+        dataloader = CacheLoader(trainer.train_loader, os.path.join(trainer.cfg.MODEL.BACKBONE_EXP_DIR, "cache_emb"),
                                 "train_" + trainer.cfg.DATASET.TRAIN, self.model, self.device, self.EMB_SIZE)
 
         print("Getting initialization data ...")
@@ -358,7 +358,7 @@ class GROODNetKNMSoftMultiClass(nn.Module):
                 mask = target == ul
                 init_data[ul] = torch.cat([init_data[ul], emb[mask, :].cpu()], dim=0)
                 count_thr[ul].append(mask.sum().item())
-            
+
             if np.all([init_data[i].shape[0] > max_init_data_per_class for i in range(0, len(init_data))]):
                 break
 
@@ -398,14 +398,14 @@ class GROODNetKNMSoftMultiClass(nn.Module):
 
                 # [B * Hp * Wp]
                 target = self.preprocess_target(target)
-                
+
                 optimizer.zero_grad()
 
                 mask = target != self.IGNORE_LABEL
                 data_dict = SimpleNamespace(data = emb[mask, :].to(self.device), val_data=None, labels=target[mask].to(self.device), val_labels=None)
                 loss = model.forward(data_dict)
                 loss.backward()
-                optimizer.step()               
+                optimizer.step()
 
                 train_loss += loss.item()
                 train_loss_count += 1
@@ -438,11 +438,11 @@ class GROODNetKNMSoftMultiClass(nn.Module):
             for c in range(0, model.num_classes):
                 data_mask = target[mask] == c
                 valid_mu = model.mu_valid[c, :]
-            
+
                 assignment = torch.argmax(r[data_mask, c, :][:, valid_mu], dim=-1)
                 one_hot = torch.nn.functional.one_hot(assignment, num_classes=valid_mu.sum().item()).float().sum(dim=0)
                 assignment_count[c, valid_mu] += one_hot
-                
+
         valid_assigned = assignment_count > 0
         model.running_assignment[~valid_assigned] = 0
         valid_a = []
@@ -476,3 +476,60 @@ class GROODNetKNMSoftMultiClass(nn.Module):
 
         return class_clusters
 
+
+class GROODNetKNMSoftMultiClassUnified2D(GROODNetKNMSoftMultiClass):
+    def __init__(self, cfg):
+        super(GROODNetKNMSoftMultiClassUnified2D, self).__init__(cfg)
+
+    def train_n_p_task(self, trainer):
+        logits_list = []
+        nm_dist_list = []
+        labels_list = []
+        print("Extracting logits and nm_dist for N-P task")
+        for sample in tqdm(trainer.train_loader):
+            # [B, 3, H, W], [B, H, W]
+            image, target = sample[0].to(self.device), sample[1]
+            # [B * Hp * Wp]
+            labels_list.append(self.preprocess_target(target))
+
+            out = self.model(image)
+            # [B * Hp * Wp, C]
+            logits, nm_dist = self.compute_2dspace_vectors(out)
+            logits_list.append(logits.cpu())
+            nm_dist_list.append(nm_dist.cpu())
+
+        logits = torch.cat(logits_list, dim=0)
+        labels = torch.cat(labels_list, dim=0)
+        labels[labels != 255] = 0
+        nm_dist = torch.cat(nm_dist_list, dim=0)
+
+        logits = torch.max(logits, dim=-1, keepdim=True)[0].repeat(1, self.NUM_CLASSES)
+        nm_dist = torch.min(nm_dist, dim=-1, keepdim=True)[0].repeat(1, self.NUM_CLASSES)
+
+        n_p_model = estimate_neyman_pearson_task(labels, logits, nm_dist, self.NUM_CLASSES, dist2sim=self.dist2sim)
+
+        self.custom_data["n_p_model"] = n_p_model
+
+    def forward(self, x, eval_scale_factor=1):
+        with torch.no_grad():
+            out = self.model(x)
+            logits, nm_dist = self.compute_2dspace_vectors(out, eval_scale_factor=eval_scale_factor)
+
+            logits_oc = torch.max(logits, dim=-1, keepdim=True)[0].repeat(1, self.NUM_CLASSES)
+            nm_dist_oc = torch.min(nm_dist, dim=-1, keepdim=True)[0].repeat(1, self.NUM_CLASSES)
+
+            score = eval_neyman_pearson_task(
+                self.custom_data["n_p_model"], logits_oc, nm_dist_oc, self.NUM_CLASSES
+            )
+
+        pred_y = torch.argmax(logits, dim=-1)
+        pred_score = score[torch.arange(score.shape[0]), pred_y]
+
+        pred_score = rearrange( pred_score, "(b h w) -> b h w", b=x.shape[0], h=eval_scale_factor*out.emb.shape[1], w=eval_scale_factor*out.emb.shape[2])
+        pred_score_all = rearrange(score, "(b h w) c -> b h w c", b=x.shape[0], h=eval_scale_factor*out.emb.shape[1], w=eval_scale_factor*out.emb.shape[2])
+        pred_y = rearrange( pred_y.float(), "(b h w) -> b h w", b=x.shape[0], h=eval_scale_factor*out.emb.shape[1], w=eval_scale_factor*out.emb.shape[2])
+        nm_dist = rearrange( nm_dist, "(b h w) c -> b h w c", b=x.shape[0], h=eval_scale_factor*out.emb.shape[1], w=eval_scale_factor*out.emb.shape[2])
+        logits = rearrange( logits, "(b h w) c -> b h w c", b=x.shape[0], h=eval_scale_factor*out.emb.shape[1], w=eval_scale_factor*out.emb.shape[2])
+
+        return SimpleNamespace(pred_y=pred_y, pred_score=pred_score, pred_score_all=pred_score_all, nm_dist=nm_dist, logits=logits,
+                               emb=out.emb[:, :, :, -self.EMB_SIZE:].detach(), logits_embshape=out.logits_embshape.detach())

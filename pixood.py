@@ -17,9 +17,9 @@ class PixOOD():
         for k, _ in sys.modules.items():
             pre_modules_keys.append(k)
 
-        cfg_local = get_experiment_cfg(self.exp_dir)
+        cfg_local = get_experiment_cfg(self.exp_dir, parameters_filename=kwargs_global.get("parameters_filename", "parameters.yaml"))
 
-        cfg_local.EXPERIMENT.RESUME_CHECKPOINT = os.path.join(self.exp_dir, "checkpoints", "checkpoint-latest.pth")
+        cfg_local.EXPERIMENT.RESUME_CHECKPOINT = os.path.join(self.exp_dir, "checkpoints", kwargs_global.get("checkpoint_filename", "checkpoint-latest.pth"))
         if not os.path.isfile(cfg_local.EXPERIMENT.RESUME_CHECKPOINT):
             raise RuntimeError(f"Experiment dir does not contain valid checkpoint!\n \t ==> file {cfg_local.EXPERIMENT.RESUME_CHECKPOINT} not found!")
 
@@ -47,12 +47,12 @@ class PixOOD():
         sys.path = sys.path[1:]
 
         # load the model paraters
-        checkpoint = torch.load(cfg_local.EXPERIMENT.RESUME_CHECKPOINT, map_location="cpu")
+        checkpoint = torch.load(cfg_local.EXPERIMENT.RESUME_CHECKPOINT, map_location="cpu", weights_only=False)
         for key in list(checkpoint['state_dict'].keys()):
             if '_orig_mod.' in key:
                 checkpoint['state_dict'][key.replace('_orig_mod.', '')] = checkpoint['state_dict'][key]
                 del checkpoint['state_dict'][key]
-        
+
         strict = not checkpoint.get("save_trainable_only", False)
         if not strict:
             print ("Saved model stores only tranable weights of model --> disabling strict model loading")
@@ -67,7 +67,7 @@ class PixOOD():
         custom_data = checkpoint.get("custom_data", {})
         if hasattr(self.model, "custom_data"):
             self.model.custom_data = custom_data
-        
+
         print("=> loaded checkpoint '{}' (epoch {})".format(cfg_local.EXPERIMENT.RESUME_CHECKPOINT, checkpoint['epoch']))
         del checkpoint
 
@@ -90,7 +90,7 @@ class PixOOD():
         # 12:rider 13:car 14:truck 15:bus
         # 16:train 17:motorcycle 18:bicycle
         if "eval_labels" not in kwargs_global.keys():
-            self.eval_labels = [0, 1] 
+            self.eval_labels = [0, 1]
             print(f"Using default road+sidewalk labels for anomaly detection!")
         elif len(kwargs_global["eval_labels"]) == 0:
             self.eval_labels = np.arange(self.cfg.MODEL.NUM_CLASSES).tolist()
@@ -111,7 +111,7 @@ class PixOOD():
                 x = []
                 for b in range(0, input_pil_image.shape[0]):
                     pi = ToPILImage()(input_pil_image[b, ...])
-                    x.append(self.transforms(SimpleNamespace(image=pi, label=None, image_name="")).image) 
+                    x.append(self.transforms(SimpleNamespace(image=pi, label=None, image_name="")).image)
                 x = torch.stack(x, dim=0).to(self.device)
             else:
                 assert False, f"No batch dimension of input tensor: {input_pil_image.shape}."
@@ -124,8 +124,8 @@ class PixOOD():
         with torch.no_grad():
             out = self.model(x, eval_scale_factor=self.eval_scale_factor)
 
-        # convert outputs to the original pil image resolution 
-        # "b h w" 
+        # convert outputs to the original pil image resolution
+        # "b h w"
         pred_score_hires = torch.nn.functional.interpolate(out.pred_score[:, None, ...], size=orig_size, mode="nearest")
         pred_score_hires = pred_score_hires.squeeze().cpu()
 
@@ -147,7 +147,7 @@ class PixOOD():
                                    pred_score_all=pred_score_hires_all,
                                    out=out)
 
-def get_experiment_cfg(exp_dir):
+def get_experiment_cfg(exp_dir, parameters_filename):
     code_dir = os.path.join(exp_dir, "code")
     #from config import get_cfg_defaults
     config_module = importlib.util.spec_from_file_location("get_cfg_defaults", os.path.join(code_dir, "config", "defaults.py")).loader.load_module()
@@ -155,12 +155,11 @@ def get_experiment_cfg(exp_dir):
     cfg_local = cfg_fnc()
 
     # read the experiment parameters
-    if os.path.isfile(os.path.join(exp_dir, "parameters.yaml")):
-        with open(os.path.join(exp_dir, "parameters.yaml"), 'r') as f:
+    if os.path.isfile(os.path.join(exp_dir, parameters_filename)):
+        with open(os.path.join(exp_dir, parameters_filename), 'r') as f:
             cc = cfg_local._load_cfg_from_yaml_str(f)
-        cfg_local.merge_from_file(os.path.join(exp_dir, "parameters.yaml"))
+        cfg_local.merge_from_file(os.path.join(exp_dir, parameters_filename))
         cfg_local.EXPERIMENT.NAME = cc.EXPERIMENT.NAME
     else:
-        raise RuntimeError(f"Experiment directory does not contain parameters.yaml: {exp_dir}")
+        raise RuntimeError(f"Experiment directory does not contain {parameters_filename}: {exp_dir}")
     return cfg_local
-
